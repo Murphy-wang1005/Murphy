@@ -4071,15 +4071,6 @@ function sC(){
   if(mM){mP=true;uM()}else{tR()}
 }
 
-// 统一通知：优先使用Service Worker（后台更可靠），回退到new Notification
-function sendNotif(title,body){
-  if(!stg.desktopNotif)return;
-  if('Notification' in window&&Notification.permission==='granted'){
-    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-      navigator.serviceWorker.ready.then(function(sw){sw.showNotification(title,{body:body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">💌</text></svg>',tag:'murphy-msg',badge:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%236cb8e8"/></svg>',requireInteraction:false})}).catch(function(){new Notification(title,{body:body,tag:'murphy-msg'})});
-    }else{new Notification(title,{body:body,tag:'murphy-msg'})}
-  }
-}
 function tR(){
   replyTimers.forEach(function(t){clearTimeout(t)});replyTimers=[];sT();
   var parts=(stg.replyCount||'1-3').split('-');var minC=parseInt(parts[0])||1,maxC=parseInt(parts[1])||(parseInt(parts[0])||1);
@@ -4093,7 +4084,7 @@ function tR(){
         if(r.type==='image'){msgData.image=r.content;msgData.text=''}else if(r.type==='emoji'){msgData.emoji=r.content;msgData.text=''}else if(r.type==='voice'){msgData.voice=r.content;msgData.text=''}
         if(Math.random()<stg.replyQuoteChance/100){var ums=messages.filter(function(m){return m.sender==='user'}).slice(-10);if(ums.length>0){var rm=ums[Math.floor(Math.random()*ums.length)];msgData.replyTo={id:rm.id,sender:'user',text:rm.text}}}
         if(blocked){msgData.blocked=true;blockedQueue.push(msgData);saveBlocked()}else{        messages.push(msgData);saveMsgs();messages.forEach(function(m){if(m.sender==='user'&&m.status!=='read')m.status='read'});rCMsg('received',msgData.text||'',{image:msgData.image,emoji:msgData.emoji,voice:msgData.voice,replyTo:msgData.replyTo,msgId:msgData.id,timeStr:fmtMsgTime(Date.now()),dateStr:fmtMsgDate(Date.now())});}
-        if(!blocked&&stg.desktopNotif&&document.hidden){sendNotif(profile.partnerName||'TA',(msgData.text||'[图片/语音]').slice(0,80))}
+        if(!blocked&&stg.desktopNotif&&document.hidden&&'Notification' in window&&Notification.permission==='granted'){try{new Notification('TA',{body:(msgData.text||'[图片/语音]').slice(0,60),tag:'murphy-msg'})}catch(e){}}
         if(Math.random()<stg.pokeChance/100&&j===replyCount-1){setTimeout(function(){var poke=POKE_MESSAGES[Math.floor(Math.random()*POKE_MESSAGES.length)];messages.push({id:Date.now()+999,sender:null,text:(profile.partnerName||'TA')+' '+poke,timestamp:new Date(),type:'system'});saveMsgs();rCMsg(null,(profile.partnerName||'TA')+' '+poke,{sysMsg:true})},400)}
         if(j===replyCount-1){setTimeout(function(){var taMsgs=messages.filter(function(m){return m.sender==='partner'&&!m.recalled&&(Date.now()-new Date(m.timestamp).getTime())<120000});if(taMsgs.length>0&&Math.random()<0.25){var rm=taMsgs[Math.floor(Math.random()*taMsgs.length)];if(recallMsg(rm.id)){toast('TA撤回了一条消息',2000)}}},30000+Math.random()*90000)}
       }catch(e){console.log('reply err',e)}
@@ -5012,7 +5003,7 @@ $('appYN').addEventListener('click',function(){if(!iU)return;$('ynOverlay').styl
 $('ynClearHistory').addEventListener('click',clearYnHistory);
 
 if(messages.length>0)renderAllMsgs();
-if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){Notification.requestPermission().then(function(p){if(p==='granted'){stg.desktopNotif=true;sS(stg);toast('🔔 通知已开启，TA的消息会推送到桌面')}})},10000)}
+if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){Notification.requestPermission()},5000)}
 console.log('🌸 Murphy传讯已就绪');
 console.log('  回复库: '+getAllReplies().length+'文字 + '+getAllEmojis().length+'表情 + '+sD.length+'贴图 + '+vD.length+'语音');
 console.log('  聊天: '+messages.length+'条 | 延迟'+stg.replyDelayMin/1000+'s-'+stg.replyDelayMax/1000+'s | '+stg.replyCount+'条/轮');
